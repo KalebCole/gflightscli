@@ -11,6 +11,15 @@ import click
 import yaml
 
 
+def get_ctx_opts(ctx) -> tuple[str, str | None, bool]:
+    """Extract common options from Click context."""
+    return (
+        ctx.obj.get("format", "json"),
+        ctx.obj.get("output"),
+        ctx.obj.get("dry_run", False),
+    )
+
+
 def format_output(data: dict | list, metadata: dict, fmt: str) -> str:
     """Format data + metadata into the requested output format string."""
     if fmt == "json":

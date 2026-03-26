@@ -6,7 +6,7 @@ import click
 
 from gflightscli.lib.errors import GFlightsError, handle_error
 from gflightscli.lib.fli_bridge import search_flights
-from gflightscli.lib.output import emit
+from gflightscli.lib.output import emit, get_ctx_opts
 
 
 @click.group()
@@ -35,9 +35,7 @@ def search(ctx, origin, destination, date, return_date, cabin_class, stops, sort
     ORIGIN and DESTINATION are IATA airport codes (e.g. SEA, JFK).
     DATE is departure date in YYYY-MM-DD format.
     """
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
-    dry_run = ctx.obj.get("dry_run", False)
+    fmt, output_path, dry_run = get_ctx_opts(ctx)
 
     params = {
         "origin": origin.upper(),
@@ -94,9 +92,7 @@ def compare(ctx, origin, destination, dates, cabin_class, stops, sort, airlines,
 
     Pass multiple dates: gflightscli flights compare SEA JFK 2026-04-01 2026-04-02 2026-04-03
     """
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
-    dry_run = ctx.obj.get("dry_run", False)
+    fmt, output_path, dry_run = get_ctx_opts(ctx)
 
     if dry_run:
         emit(
@@ -107,39 +103,36 @@ def compare(ctx, origin, destination, dates, cabin_class, stops, sort, airlines,
         )
         return
 
-    try:
-        comparison = []
-        for date in dates:
-            try:
-                results = search_flights(
-                    origin=origin,
-                    destination=destination,
-                    departure_date=date,
-                    cabin_class=cabin_class,
-                    max_stops=stops,
-                    sort_by=sort,
-                    airlines=list(airlines) if airlines else None,
-                    top_n=top,
-                )
-                best = results[0] if results else None
-                comparison.append({
-                    "date": date,
-                    "cheapest_price": best["price"] if best else None,
-                    "results": results,
-                })
-            except GFlightsError as e:
-                comparison.append({
-                    "date": date,
-                    "cheapest_price": None,
-                    "error": e.message,
-                    "results": [],
-                })
+    comparison = []
+    for date in dates:
+        try:
+            results = search_flights(
+                origin=origin,
+                destination=destination,
+                departure_date=date,
+                cabin_class=cabin_class,
+                max_stops=stops,
+                sort_by=sort,
+                airlines=list(airlines) if airlines else None,
+                top_n=top,
+            )
+            best = results[0] if results else None
+            comparison.append({
+                "date": date,
+                "cheapest_price": best["price"] if best else None,
+                "results": results,
+            })
+        except GFlightsError as e:
+            comparison.append({
+                "date": date,
+                "cheapest_price": None,
+                "error": e.message,
+                "results": [],
+            })
 
-        metadata = {
-            "origin": origin.upper(),
-            "destination": destination.upper(),
-            "dates_compared": len(dates),
-        }
-        emit(comparison, metadata, fmt, output_path)
-    except GFlightsError as e:
-        handle_error(e)
+    metadata = {
+        "origin": origin.upper(),
+        "destination": destination.upper(),
+        "dates_compared": len(dates),
+    }
+    emit(comparison, metadata, fmt, output_path)

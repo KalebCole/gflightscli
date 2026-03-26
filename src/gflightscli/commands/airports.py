@@ -6,7 +6,7 @@ import click
 
 from gflightscli.lib.errors import GFlightsError, handle_error
 from gflightscli.lib.fli_bridge import lookup_airports
-from gflightscli.lib.output import emit
+from gflightscli.lib.output import emit, get_ctx_opts
 
 
 @click.group()
@@ -23,8 +23,7 @@ def lookup(ctx, query):
 
     QUERY can be a partial code (e.g. "SEA") or city name (e.g. "seattle").
     """
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
+    fmt, output_path, _ = get_ctx_opts(ctx)
 
     try:
         results = lookup_airports(query)

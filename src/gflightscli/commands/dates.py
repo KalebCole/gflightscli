@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 import click
 
 from gflightscli.lib.errors import GFlightsError, handle_error
 from gflightscli.lib.fli_bridge import search_dates
-from gflightscli.lib.output import emit
+from gflightscli.lib.output import emit, get_ctx_opts
 
 
 DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
@@ -43,9 +45,7 @@ def search(ctx, origin, destination, from_date, to_date, duration, round_trip,
 
     ORIGIN and DESTINATION are IATA airport codes.
     """
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
-    dry_run = ctx.obj.get("dry_run", False)
+    fmt, output_path, dry_run = get_ctx_opts(ctx)
 
     if dry_run:
         emit(
@@ -73,7 +73,6 @@ def search(ctx, origin, destination, from_date, to_date, duration, round_trip,
         day_flags = [monday, tuesday, wednesday, thursday, friday, saturday, sunday]
         if any(day_flags):
             allowed_days = {i for i, flag in enumerate(day_flags) if flag}
-            from datetime import datetime
             filtered = []
             for r in results:
                 date_str = r.get("date") or r.get("departure_date")
@@ -113,9 +112,7 @@ def cheapest(ctx, origin, destination, from_date, to_date, duration, round_trip,
 
     Wraps dates search and returns results sorted by price.
     """
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
-    dry_run = ctx.obj.get("dry_run", False)
+    fmt, output_path, dry_run = get_ctx_opts(ctx)
 
     if dry_run:
         emit(
