@@ -69,6 +69,23 @@ def test_remove_track(tmp_tracking):
     assert loaded[0]["id"] == "keep"
 
 
+def test_track_remove_dry_run(tmp_tracking):
+    """--dry-run should show what would be removed without deleting."""
+    _save_tracks([{"id": "abc123", "origin": "SEA", "destination": "JFK",
+                   "date": "2026-04-01", "below": 300, "filters": {}}])
+
+    from click.testing import CliRunner
+    from gflightscli.cli import cli
+    runner = CliRunner()
+    result = runner.invoke(cli, ["--dry-run", "track", "remove", "abc123"])
+    assert result.exit_code == 0
+    parsed = json.loads(result.output)
+    assert parsed["metadata"]["dry_run"] is True
+
+    # Verify track was NOT actually removed
+    assert len(_load_tracks()) == 1
+
+
 def test_tracking_file_format(tmp_tracking):
     _save_tracks([{"id": "x", "origin": "SEA"}])
     raw = json.loads(tmp_tracking.read_text())

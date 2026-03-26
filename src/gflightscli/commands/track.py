@@ -147,15 +147,24 @@ def remove(ctx, track_id):
     """Remove a tracked route by ID."""
     fmt = ctx.obj.get("format", "json")
     output_path = ctx.obj.get("output")
+    dry_run = ctx.obj.get("dry_run", False)
 
     tracks = _load_tracks()
-    original_count = len(tracks)
-    tracks = [t for t in tracks if t["id"] != track_id]
+    target = [t for t in tracks if t["id"] == track_id]
 
-    if len(tracks) == original_count:
+    if not target:
         handle_error(NotFoundError(f"No track with id '{track_id}'."))
         return
 
+    if dry_run:
+        emit(
+            target[0],
+            {"command": "track.remove", "dry_run": True},
+            fmt, output_path,
+        )
+        return
+
+    tracks = [t for t in tracks if t["id"] != track_id]
     _save_tracks(tracks)
     emit(
         {"removed": track_id},
