@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 
 import click
@@ -16,9 +17,9 @@ from gflightscli.lib.errors import GFlightsError, InternalError, handle_error
 
 
 @click.group()
-@click.option("--format", "-f", "fmt", default="json",
+@click.option("--format", "-f", "fmt", default=None,
               type=click.Choice(["json", "table", "yaml", "csv"]),
-              help="Output format")
+              help="Output format (env: GFLIGHTSCLI_FORMAT)")
 @click.option("--dry-run", is_flag=True, help="Show params without calling API")
 @click.option("--verbose", is_flag=True, help="Show request details on stderr")
 @click.option("--output", "-o", default=None, type=click.Path(), help="Write output to file")
@@ -27,7 +28,7 @@ from gflightscli.lib.errors import GFlightsError, InternalError, handle_error
 def cli(ctx, fmt, dry_run, verbose, output, no_color):
     """gflightscli — JSON-first Google Flights CLI."""
     ctx.ensure_object(dict)
-    ctx.obj["format"] = fmt
+    ctx.obj["format"] = fmt or os.environ.get("GFLIGHTSCLI_FORMAT", "json")
     ctx.obj["dry_run"] = dry_run
     ctx.obj["verbose"] = verbose
     ctx.obj["output"] = output

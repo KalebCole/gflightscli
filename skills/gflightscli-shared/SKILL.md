@@ -63,3 +63,17 @@ gflightscli version
 - `track add` / `track list` / `track check` / `track remove`
 - `airports lookup`
 - `schema` / `version`
+
+## Retry & Rate Limiting
+
+The underlying `fli` library handles HTTP retries automatically via `curl_cffi` with backoff. If you hit rate limits:
+
+- Space searches 30-60 seconds apart
+- Reduce `--top` to fetch fewer results
+- Use `--dry-run` to validate parameters before live calls
+- For automated tracking, use 30+ minute intervals between checks
+
+## Environment Variables
+
+- `GFLIGHTSCLI_FORMAT` — default output format (`json`, `table`, `yaml`, `csv`)
+- `GFLIGHTSCLI_HOME` — config/tracking directory (default: `~/.gflightscli`)

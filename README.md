@@ -171,6 +171,31 @@ Six SKILL.md files in `skills/` provide structured instructions for AI agents:
 - `recipe-trip-planner` — multi-step trip planning workflow
 - `recipe-price-monitor` — automated price monitoring setup
 
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GFLIGHTSCLI_FORMAT` | Default output format | `json` |
+| `GFLIGHTSCLI_HOME` | Config/tracking directory | `~/.gflightscli` |
+
+## Retry Behavior
+
+gflightscli wraps the [fli](https://pypi.org/project/flights/) library which includes built-in rate limiting and automatic retries for Google Flights API requests. The retry logic is handled internally by fli's HTTP client (`curl_cffi` with backoff). If you're seeing rate limit errors:
+
+- **Wait 30-60 seconds** between searches — Google throttles rapid requests
+- **Reduce `--top`** to fetch fewer results per search
+- **Use `--dry-run`** to validate params before making API calls
+- **For price tracking**, space checks apart (the cron example uses 30min intervals)
+
+## Troubleshooting
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| `Unknown airport code: XYZ` | IATA code not in fli's database | Use `gflightscli airports lookup` to find valid codes |
+| `Google Flights API error` | Rate limited or API changed | Wait 60s and retry. If persistent, check fli's GitHub for updates |
+| `No flights found` | No results for route/date/filters | Try relaxing filters (remove `--stops NON_STOP`, widen dates) |
+| Global flags ignored | `--format`/`--dry-run` must come BEFORE subcommand | Use `gflightscli --format table flights search ...` not `gflightscli flights search --format table` |
+
 ## Development
 
 ```bash
