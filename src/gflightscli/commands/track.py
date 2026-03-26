@@ -12,10 +12,10 @@ import click
 
 from gflightscli.lib.errors import GFlightsError, NotFoundError, ValidationError, handle_error
 from gflightscli.lib.fli_bridge import search_flights
-from gflightscli.lib.output import emit
+from gflightscli.lib.output import emit, get_ctx_opts
 
 
-TRACKING_DIR = Path.home() / ".gflightscli"
+TRACKING_DIR = Path(os.environ.get("GFLIGHTSCLI_HOME", Path.home() / ".gflightscli"))
 TRACKING_FILE = TRACKING_DIR / "tracking.json"
 
 
@@ -53,8 +53,7 @@ def add(ctx, origin, destination, date, return_date, below, cabin_class, stops):
 
     Tracks ORIGIN→DESTINATION on DATE and alerts when price drops below --below.
     """
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
+    fmt, output_path, _ = get_ctx_opts(ctx)
 
     tracks = _load_tracks()
     new_track = {
@@ -79,8 +78,7 @@ def add(ctx, origin, destination, date, return_date, below, cabin_class, stops):
 @click.pass_context
 def list_tracks(ctx):
     """Show all tracked routes."""
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
+    fmt, output_path, _ = get_ctx_opts(ctx)
 
     tracks = _load_tracks()
     emit(tracks, {"command": "track.list", "count": len(tracks)}, fmt, output_path)
@@ -91,8 +89,7 @@ def list_tracks(ctx):
 @click.pass_context
 def check(ctx, track_id):
     """Run price check on tracked routes."""
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
+    fmt, output_path, _ = get_ctx_opts(ctx)
 
     tracks = _load_tracks()
     if track_id:
@@ -105,6 +102,7 @@ def check(ctx, track_id):
     all_tracks = _load_tracks()
 
     for t in tracks:
+        error_msg = None
         try:
             flights = search_flights(
                 origin=t["origin"],
@@ -116,8 +114,9 @@ def check(ctx, track_id):
                 top_n=1,
             )
             current_price = flights[0]["price"] if flights else None
-        except GFlightsError:
+        except GFlightsError as e:
             current_price = None
+            error_msg = str(e)
 
         # Update tracking state
         for at in all_tracks:
@@ -126,7 +125,7 @@ def check(ctx, track_id):
                 at["last_price"] = current_price
 
         below_threshold = current_price is not None and current_price <= t["below"]
-        results.append({
+        result_entry = {
             "id": t["id"],
             "origin": t["origin"],
             "destination": t["destination"],
@@ -134,7 +133,10 @@ def check(ctx, track_id):
             "threshold": t["below"],
             "current_price": current_price,
             "below_threshold": below_threshold,
-        })
+        }
+        if current_price is None and error_msg:
+            result_entry["error"] = error_msg
+        results.append(result_entry)
 
     _save_tracks(all_tracks)
     emit(results, {"command": "track.check", "checked": len(results)}, fmt, output_path)
@@ -145,9 +147,7 @@ def check(ctx, track_id):
 @click.pass_context
 def remove(ctx, track_id):
     """Remove a tracked route by ID."""
-    fmt = ctx.obj.get("format", "json")
-    output_path = ctx.obj.get("output")
-    dry_run = ctx.obj.get("dry_run", False)
+    fmt, output_path, dry_run = get_ctx_opts(ctx)
 
     tracks = _load_tracks()
     target = [t for t in tracks if t["id"] == track_id]
