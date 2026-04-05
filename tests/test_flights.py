@@ -129,9 +129,9 @@ def test_normalize_round_trip():
     assert result["total_price"] == total_rt_price
     assert result["total_duration_minutes"] == 1180  # This should still be summed
 
-    # Each leg should show estimated per-leg price for display purposes
-    assert result["outbound"]["price"] == total_rt_price / 2
-    assert result["return"]["price"] == total_rt_price / 2
+    # Per-leg prices are the raw bundled RT fares from Google (not estimated)
+    assert result["outbound"]["price"] == total_rt_price
+    assert result["return"]["price"] == total_rt_price
 
     assert "outbound" in result
     assert "return" in result
@@ -174,9 +174,9 @@ def test_normalize_round_trip_google_flights_behavior():
     # Fixed behavior: total_price = 237 (correct)
     assert result["total_price"] == 237, f"Expected $237 total, got ${result['total_price']}"
 
-    # Per-leg prices should be estimated breakdown for display
-    assert result["outbound"]["price"] == 118.5  # 237 / 2
-    assert result["return"]["price"] == 118.5    # 237 / 2
+    # Per-leg prices are the raw bundled RT fares from Google
+    assert result["outbound"]["price"] == 237
+    assert result["return"]["price"] == 237
 
     # Duration is still additive
     assert result["total_duration_minutes"] == 300  # 150 + 150
