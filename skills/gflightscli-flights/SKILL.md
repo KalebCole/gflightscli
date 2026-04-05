@@ -33,6 +33,13 @@ gflightscli flights search SEA LHR 2026-04-01 --return-date 2026-04-10 --class B
 gflightscli flights search SEA JFK 2026-04-01 --format table
 ```
 
+### Round-Trip Pricing
+
+When using `--return-date` for round-trip searches:
+- The `total_price` field shows the **complete round-trip fare**
+- Individual leg prices (outbound/return) are estimated breakdowns for display purposes
+- Google Flights returns the total round-trip price bundled across both legs
+
 ## flights compare
 
 Compare prices across multiple departure dates.
