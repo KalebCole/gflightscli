@@ -193,10 +193,12 @@ def _normalize_flight_result(result) -> dict:
     """Convert a FlightResult (or tuple of FlightResults for round-trip) to a dict."""
     if isinstance(result, tuple):
         outbound, returning = result
+        # Google Flights returns the total RT fare on each leg, not per-leg prices.
+        # The return leg's price after outbound selection is the definitive RT total.
         return {
             "outbound": _single_flight_to_dict(outbound),
             "return": _single_flight_to_dict(returning),
-            "total_price": outbound.price + returning.price,
+            "total_price": returning.price,
             "total_duration_minutes": outbound.duration + returning.duration,
         }
     return _single_flight_to_dict(result)
